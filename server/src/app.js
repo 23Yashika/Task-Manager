@@ -1,17 +1,14 @@
 // app.js
 import express from 'express';
-import userRoutes from './routes/userRoutes'
-import taskRoutes from './routes/taskRoutes'
+import userRoutes from './routes/userRoutes.js';
+import taskRoutes from './routes/taskRoutes.js';
+
 const app = express();
-
-
 app.use(express.json());
-
 
 app.get('/', (req, res) => {
   res.status(200).send('Welcome to Task Manager API');
 });
-
 
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
