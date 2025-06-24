@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ Imported for navigation
+import { useNavigate } from 'react-router-dom';
 import TaskCard from '../pages/TaskCard';
 
 const TaskManager = ({ user }) => {
   const [tasks, setTasks] = useState([]);
+  const [completedTasks, setCompletedTasks] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [editTaskId, setEditTaskId] = useState(null);
 
-  const navigate = useNavigate(); // ✅ Ready for future use (e.g., logout)
+  const navigate = useNavigate();
 
   const handleAddOrUpdate = () => {
     if (editTaskId) {
-      setTasks(tasks.map(t => t.id === editTaskId ? { ...t, title, description } : t));
+      setTasks(tasks.map(t => (t.id === editTaskId ? { ...t, title, description } : t)));
       setEditTaskId(null);
     } else {
       setTasks([...tasks, { id: Date.now(), title, description }]);
@@ -27,17 +28,31 @@ const TaskManager = ({ user }) => {
     setEditTaskId(task.id);
   };
 
-  const handleDelete = (id) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  const handleDelete = (id, fromCompleted = false) => {
+    if (fromCompleted) {
+      setCompletedTasks(completedTasks.filter(task => task.id !== id));
+    } else {
+      setTasks(tasks.filter(task => task.id !== id));
+    }
+  };
+
+  const handleComplete = (id) => {
+    const completedTask = tasks.find(task => task.id === id);
+    if (completedTask) {
+      setCompletedTasks([...completedTasks, completedTask]);
+      setTasks(tasks.filter(task => task.id !== id));
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="mb-6">
-        <h1 className="text-4xl font-bold mb-2 text-red-500">Task Manager</h1>
+        <h1 className="text-4xl font-bold mb-2 text-red-500 text-center">Task Manager</h1>
         <h1 className="text-3xl font-bold mb-2 mt-3">Welcome, {user.fullName}</h1>
         <p className="text-lg text-gray-600">Username: {user.username}</p>
       </div>
+
+      {/* Task Creation Form */}
       <div className="mb-6">
         <input
           type="text"
@@ -59,9 +74,34 @@ const TaskManager = ({ user }) => {
           {editTaskId ? 'Update Task' : 'Add Task'}
         </button>
       </div>
+
+      {/* Recent Tasks */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Recent Tasks</h2>
+        {tasks.length === 0 && <p className="text-gray-500">No active tasks</p>}
+        {tasks.map((task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onEdit={handleEdit}
+            onDelete={(id) => handleDelete(id, false)}
+            onComplete={handleComplete}
+            isCompleted={false}
+          />
+        ))}
+      </div>
+
+      {/* Completed Tasks */}
       <div>
-        {tasks.map(task => (
-          <TaskCard key={task.id} task={task} onEdit={handleEdit} onDelete={handleDelete} />
+        <h2 className="text-2xl font-semibold mb-4 text-green-600">Completed Tasks</h2>
+        {completedTasks.length === 0 && <p className="text-gray-500">No tasks completed yet</p>}
+        {completedTasks.map((task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onDelete={(id) => handleDelete(id, true)}
+            isCompleted={true}
+          />
         ))}
       </div>
     </div>

@@ -1,7 +1,18 @@
-import express from "express"
-const app = express();
+import 'dotenv/config'
+import app from './src/app.js'
+import connectdb from './src/config/db.js'
 
-app.get("/",(req,res)=>{
-    res.status(200).send("welcome to express");
-})
-app.listen(3000);
+const PORT = process.env.PORT
+
+async function startServer() {
+  try {
+    await connectdb();
+    app.listen(PORT, () => {
+        console.log(`✅ App is running : PORT - ${PORT}`)
+    })
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1)
+  }
+};
+startServer();
