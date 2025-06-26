@@ -22,6 +22,7 @@ export const getUserTasks = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const updated = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ message: 'Task not found' });
     res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update task', error });
@@ -37,3 +38,17 @@ export const deleteTask = async (req, res) => {
   }
 };
 
+// ✅ NEW: completeTask - PATCH route handler
+export const completeTask = async (req, res) => {
+  try {
+    const updated = await Task.findByIdAndUpdate(
+      req.params.id,
+      { completed: true },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ message: 'Task not found' });
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to mark task as complete', error });
+  }
+};

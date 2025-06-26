@@ -1,76 +1,30 @@
-import React, { useEffect, useState } from 'react';
+// pages/TaskDashboard.jsx
+import React from 'react';
 import { useParams } from 'react-router-dom';
+import useTasks from '../hooks/useTasks';
 
 const TaskDashboard = () => {
   const { userId } = useParams();
-  const [tasks, setTasks] = useState([]);
-  const [form, setForm] = useState({ title: '', description: '' });
-  const [loading, setLoading] = useState(false);
-
   const API_BASE = 'http://localhost:5000/api/tasks';
 
-  // Fetch tasks
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE}/${userId}`);
-      if (!res.ok) throw new Error('Failed to fetch tasks');
-      const data = await res.json();
-      setTasks(data);
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Create task
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    if (!form.title) return;
-
-    try {
-      const res = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          title: form.title,
-          description: form.description,
-        }),
-      });
-
-      if (!res.ok) throw new Error('Failed to create task');
-      const newTask = await res.json();
-      setTasks((prev) => [...prev, newTask]);
-      setForm({ title: '', description: '' });
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  // Delete task
-  const handleDelete = async (id) => {
-    try {
-      const res = await fetch(`${API_BASE}/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error('Failed to delete task');
-      setTasks((prev) => prev.filter((task) => task._id !== id));
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  useEffect(() => {
-    if (userId) fetchTasks();
-  }, [userId]);
+  const {
+    tasks,
+    completedTasks,
+    loading,
+    deleteTask,
+    completeTask,
+    handleSubmit,
+    form,
+    setForm,
+    isEditing,
+    startEdit,
+  } = useTasks(userId, API_BASE);
 
   return (
     <div className="p-6 max-w-xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">Task Dashboard</h2>
 
-      <form onSubmit={handleCreate} className="mb-6 space-y-3">
+      <form onSubmit={handleSubmit} className="mb-6 space-y-3">
         <input
           type="text"
           placeholder="Title"
@@ -86,29 +40,47 @@ const TaskDashboard = () => {
           className="w-full border p-2 rounded"
         />
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-          Add Task
+          {isEditing ? 'Update Task' : 'Add Task'}
         </button>
       </form>
 
       {loading ? (
         <p>Loading tasks...</p>
       ) : (
-        <ul className="space-y-3">
-          {tasks.map((task) => (
-            <li key={task._id} className="p-4 border rounded flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold">{task.title}</h3>
+        <>
+          <h3 className="text-lg font-semibold mt-4">Recent Tasks</h3>
+          <ul className="space-y-3 mb-6">
+            {tasks.map((task) => (
+              <li key={task._id} className="p-4 border rounded flex justify-between items-start">
+                <div>
+                  <h4 className="font-semibold">{task.title}</h4>
+                  <p className="text-sm text-gray-600">{task.description}</p>
+                </div>
+                <div className="space-x-2">
+                  <button onClick={() => startEdit(task)} className="text-blue-500 text-sm">Edit</button>
+                  <button onClick={() => completeTask(task._id)} className="text-green-600 text-sm">Done</button>
+                  <button onClick={() => deleteTask(task._id)} className="text-red-500 text-sm">Delete</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <h3 className="text-lg font-semibold mt-4">Completed Tasks</h3>
+          <ul className="space-y-3">
+            {completedTasks.map((task) => (
+              <li key={task._id} className="p-4 border rounded bg-green-50">
+                <h4 className="font-semibold text-green-700">{task.title}</h4>
                 <p className="text-sm text-gray-600">{task.description}</p>
-              </div>
-              <button
-                onClick={() => handleDelete(task._id)}
-                className="text-red-500 text-sm"
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
+                <button
+                  onClick={() => deleteTask(task._id)}
+                  className="text-red-500 text-sm ml-110 relative -top-10"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
